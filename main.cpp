@@ -6,8 +6,6 @@
 #include <vector>
 #include <string>
 
-// Función para imprimir el menú
-
 
 int main() {
     bool running = true;

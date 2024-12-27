@@ -1,20 +1,36 @@
-// Flow.cpp
 #include "Flow.h"
 
-// Constructor
+/**
+ * Constructor de la clase Flow.
+ * 
+ * @return Instancia de Flow.
+ */
 Flow::Flow() : totalFlow(0) {}
 
-// Incrementar flujo total
+/**
+ * Incrementar flujo total.
+ * 
+ * @param flow Flujo a incrementar.
+ * 
+ */
 void Flow::addFlow(int flow) {
     totalFlow += flow;
 }
 
-// Obtener el flujo total
+/**
+ * Obtener el flujo total.
+ * 
+ * @return Flujo total.
+ * 
+ */
 int Flow::getTotalFlow() const {
     return totalFlow;
 }
 
-// Reiniciar flujo total
+/**
+ * Reiniciar flujo total.
+ * 
+ */
 void Flow::resetFlow() {
     totalFlow = 0;
 }

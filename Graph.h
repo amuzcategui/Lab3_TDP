@@ -2,58 +2,36 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-#include <unordered_map>
-#include <vector>
+#include "State.h"
 #include <string>
+#include <vector>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <climits>
+#include <stdexcept>
 
 class Graph {
 private:
-    std::unordered_map<int, std::unordered_map<int, int>> adjacencyList;
-    std::unordered_map<int, std::unordered_map<int, int>> flowList;  // Add this to track flows separately
-    int superSource;
-    int superSink;
+    State state; // Estado del grafo
 
 public:
+    Graph(); // Constructor
 
-    int numVertices;
-    // Constructor
-    Graph();
+    void addEdge(int from, int to, int capacity); // Añadir arista
+    int getResidualCapacity(int from, int to) const; // Obtener capacidad residual
+    void updateFlow(int from, int to, int flow); // Actualizar flujo
+    void resetFlows(); // Reiniciar flujos
 
-    int getNumVertices() const;
+    int getNumVertices() const; // Obtener número de vértices
+    int getSuperSource() const; // Obtener nodo fuente
+    int getSuperSink() const; // Obtener nodo sumidero
+    int getCurrentFlow(int from, int to) const; // Obtener flujo actual
+    std::vector<int> getNeighbors(int vertex) const; // Obtener vecinos de un nodo
 
-    // Add an edge to the graph
-    void addEdge(int from, int to, int capacity);
-
-    // Get the residual capacity of an edge
-    int getResidualCapacity(int from, int to) const;
-
-    // Update the flow on an edge
-    void updateFlow(int from, int to, int flow);
-
-    // Add a super source and super sink to handle multiple sources and sinks
+    // Añadir nodo fuente y sumidero
     void addSuperSourceAndSink(const std::vector<int>& sources, const std::vector<int>& sinks);
-
-    // Get neighbors of a vertex
-    std::vector<int> getNeighbors(int vertex) const;
-
-    // Print the graph (for debugging)
-    void print() const;
-
-    // Accessor for super source and sink
-    int getSuperSource() const;
-    int getSuperSink() const;
-
-    // Load graph from file
+    
+    // Cargar grafo desde archivo
     void loadFromFile(const std::string& filename, std::vector<int>& sources, std::vector<int>& sinks);
-    int getCurrentFlow(int from, int to) const;
-
-
-    void resetFlows();
-
 };
-
-#endif // GRAPH_H
+#endif

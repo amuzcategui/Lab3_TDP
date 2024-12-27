@@ -1,123 +1,162 @@
 #include "Graph.h"
-#include <queue>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <stdexcept>
-#include <unordered_set>
 
-Graph::Graph() : superSource(-1), superSink(-1) {
-    numVertices = 0;
-}
+/**
+ * Constructor de la clase Graph.
+ * 
+ * @return Instancia de Graph.
+ * 
+ */
+Graph::Graph() {}
 
+/**
+ * Método para añadir una arista al grafo.
+ * 
+ * @param from Nodo de origen.
+ * @param to Nodo de destino.
+ * @param capacity Capacidad de la arista.
+ * 
+ */
 void Graph::addEdge(int from, int to, int capacity) {
-    // Añade la arista al grafo
-    adjacencyList[from][to] = capacity;
-    flowList[from][to] = 0;
-
-    adjacencyList[to][from] = 0;
-    flowList[to][from] = 0;
-
+    state.addEdge(from, to, capacity);
     
-    if (adjacencyList.count(from) == 1 && adjacencyList[from].size() == 1) numVertices++;
-    if (adjacencyList.count(to) == 1 && adjacencyList[to].size() == 1) numVertices++;
+    int maxVertex = std::max(from, to);
+    if (maxVertex >= state.getNumVertices()) {
+        state.setNumVertices(maxVertex + 1);
+    }
 }
 
-int Graph::getNumVertices() const {
-    return numVertices;
-}
-
+/**
+ * Método para obtener la capacidad residual de una arista.
+ * 
+ * @param from Nodo de origen.
+ * @param to Nodo de destino.
+ * 
+ * @return Capacidad residual de la arista.
+ * 
+ */
 int Graph::getResidualCapacity(int from, int to) const {
-    int capacity = 0;
-    int flow = 0;
-
-    // Obtener capacidad
-    if (adjacencyList.find(from) != adjacencyList.end() &&
-        adjacencyList.at(from).find(to) != adjacencyList.at(from).end()) {
-        capacity = adjacencyList.at(from).at(to);
-    }
-
-    // Obtener flujo
-    if (flowList.find(from) != flowList.end() &&
-        flowList.at(from).find(to) != flowList.at(from).end()) {
-        flow = flowList.at(from).at(to);
-    }
-
-    return capacity - flow;
+    return state.getResidualCapacity(from, to);
 }
 
-void Graph::updateFlow(int from, int to, int additionalFlow) {
-    if (additionalFlow <= 0) return;
-    
-    // Actualizar flujo directo
-    if (flowList[from].find(to) == flowList[from].end()) {
-        flowList[from][to] = 0;
-    }
-    flowList[from][to] += additionalFlow;
-
-    // Actualizar flujo inverso
-    if (flowList[to].find(from) == flowList[to].end()) {
-        flowList[to][from] = 0;
-    }
-    flowList[to][from] -= additionalFlow;
+/**
+ * Método para actualizar el flujo de una arista.
+ * 
+ * @param from Nodo de origen.
+ * @param to Nodo de destino.
+ * @param flow Flujo adicional.
+ * 
+ */
+void Graph::updateFlow(int from, int to, int flow) {
+    state.updateFlow(from, to, flow);
 }
 
+/**
+ * Método para reiniciar los flujos del grafo.
+ * 
+ */
+void Graph::resetFlows() {
+    state.resetFlows();
+}
 
+/**
+ * Método para obtener el número de vértices del grafo.
+ * 
+ * @return Número de vértices del grafo.
+ * 
+ */
+int Graph::getNumVertices() const {
+    return state.getNumVertices();
+}
+
+/**
+ * Método para obtener el nodo fuente del grafo.
+ * 
+ * @return Nodo fuente del grafo.
+ * 
+ */
+int Graph::getSuperSource() const {
+    return state.getSuperSource();
+}
+
+/**
+ * Método para obtener el nodo sumidero del grafo.
+ * 
+ * @return Nodo sumidero del grafo.
+ * 
+ */
+int Graph::getSuperSink() const {
+    return state.getSuperSink();
+}
+
+/**
+ * Método para obtener el flujo actual de una arista.
+ * 
+ * @param from Nodo de origen.
+ * @param to Nodo de destino.
+ * 
+ * @return Flujo actual de la arista.
+ * 
+ */
+int Graph::getCurrentFlow(int from, int to) const {
+    return state.getFlow(from, to);
+}
+
+/**
+ * Método para obtener los vecinos de un nodo.
+ * 
+ * @param vertex Nodo del que se desean obtener los vecinos.
+ * 
+ * @return Vector con los nodos vecinos.
+ * 
+ */
+std::vector<int> Graph::getNeighbors(int vertex) const {
+    return state.getNeighbors(vertex);
+}
+
+/**
+ * Método para añadir un nodo fuente y un nodo sumidero al grafo.
+ * 
+ * @param sources Vector con los nodos fuente.
+ * @param sinks Vector con los nodos sumidero.
+ * 
+ */
 void Graph::addSuperSourceAndSink(const std::vector<int>& sources, const std::vector<int>& sinks) {
-    superSource = numVertices++;
-    superSink = numVertices++;
+    int newSuperSource = state.getNumVertices();
+    int newSuperSink = newSuperSource + 1;
+    
+    state.setSuperSource(newSuperSource);
+    state.setSuperSink(newSuperSink);
+    state.setNumVertices(newSuperSink + 1);
 
-    // Para cada fuente, conectar con super source usando la suma de sus capacidades salientes
+    // Conectar fuentes
     for (int source : sources) {
         int sourceCapacity = 0;
-        if (adjacencyList.find(source) != adjacencyList.end()) {
-            for (const auto& edge : adjacencyList[source]) {
-                sourceCapacity += edge.second;
-            }
+        for (int neighbor : getNeighbors(source)) {
+            sourceCapacity += state.getCapacity(source, neighbor);
         }
-        addEdge(superSource, source, sourceCapacity);
+        addEdge(newSuperSource, source, sourceCapacity);
     }
 
-    // Para cada sumidero, conectar al super sink usando la suma de sus capacidades entrantes
+    // Conectar sumideros
     for (int sink : sinks) {
         int sinkCapacity = 0;
-        for (const auto& edges : adjacencyList) {
-            if (edges.second.find(sink) != edges.second.end()) {
-                sinkCapacity += edges.second.at(sink);
+        for (int vertex = 0; vertex < newSuperSource; vertex++) {
+            if (state.hasEdge(vertex, sink)) {
+                sinkCapacity += state.getCapacity(vertex, sink);
             }
         }
-        addEdge(sink, superSink, sinkCapacity);
+        addEdge(sink, newSuperSink, sinkCapacity);
     }
 }
 
-
-std::vector<int> Graph::getNeighbors(int vertex) const {
-    std::vector<int> neighbors;
-    if (adjacencyList.find(vertex) != adjacencyList.end()) {
-        for (const auto& pair : adjacencyList.at(vertex)) {
-            neighbors.push_back(pair.first);
-        }
-    }
-    return neighbors;
-}
-
-void Graph::print() const {
-    for (const auto& node : adjacencyList) {
-        std::cout << "Node " << node.first << ":\n";
-        for (const auto& edge : node.second) {
-            std::cout << "  -> " << edge.first << " (capacity: " << edge.second << ")\n";
-        }
-    }
-}
-
-int Graph::getSuperSource() const {
-    return superSource;
-}
-
-int Graph::getSuperSink() const {
-    return superSink;
-}
-
+/**
+ * Método para cargar un grafo desde un archivo.
+ * 
+ * @param filename Nombre del archivo.
+ * @param sources Vector donde se almacenarán los nodos fuente.
+ * @param sinks Vector donde se almacenarán los nodos sumidero.
+ * 
+ */
 void Graph::loadFromFile(const std::string& filename, std::vector<int>& sources, std::vector<int>& sinks) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -127,7 +166,6 @@ void Graph::loadFromFile(const std::string& filename, std::vector<int>& sources,
     std::string line;
     int vertex;
 
-    // Leer fuentes
     if (std::getline(file, line)) {
         std::istringstream iss(line);
         while (iss >> vertex) {
@@ -138,7 +176,6 @@ void Graph::loadFromFile(const std::string& filename, std::vector<int>& sources,
         }
     }
 
-    // Leer sumideros
     if (std::getline(file, line)) {
         std::istringstream iss(line);
         while (iss >> vertex) {
@@ -149,7 +186,6 @@ void Graph::loadFromFile(const std::string& filename, std::vector<int>& sources,
         }
     }
 
-    // Leer arcos
     while (std::getline(file, line)) {
         std::istringstream iss(line);
         int from, to, capacity;
@@ -163,15 +199,4 @@ void Graph::loadFromFile(const std::string& filename, std::vector<int>& sources,
     }
 
     file.close();
-}
-
-int Graph::getCurrentFlow(int from, int to) const {
-    if (flowList.count(from) && flowList.at(from).count(to)) {
-        return flowList.at(from).at(to);
-    }
-    return 0;
-}
-
-void Graph::resetFlows() {
-    flowList.clear();
 }
