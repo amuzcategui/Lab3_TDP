@@ -15,9 +15,9 @@ private:
 
 public:
     Algorithm(Graph& g); // Constructor
+    bool buildLevelGraph(std::vector<int>& level); // Construir grafo de niveles
+    int findBlockingFlow(int vertex, int flow, std::vector<int>& level, std::vector<int>& start); // Encontrar flujo bloqueante
 
-    bool findAugmentingPath(std::vector<int>& path); // Buscar camino aumentante
-    int updateFlow(const std::vector<int>& path); // Actualizar flujo
     int solve(); // Resolver el problema de flujo máximo
     double getExecutionTime() const; // Obtener el tiempo de ejecución
 };
