@@ -1,3 +1,4 @@
+// test_Graph.cpp
 #include "Graph.h"
 #include <cassert>
 #include <iostream>
@@ -13,12 +14,8 @@ int main() {
         Graph g(3);
         g.addEdge(0, 1, 10);
         assert(g.getCapacity(0, 1) == 10);
-        assert(g.getCurrentFlow(0, 1) == 0);
-        
-        // Verificar que la arista residual se creó
         assert(g.getCapacity(1, 0) == 0);
         
-        // Verificar lista de adyacencia
         const auto& adj = g.getAdj(0);
         assert(!adj.empty() && adj[0] == 1);
     }
@@ -27,7 +24,6 @@ int main() {
     // Test 2: Load from file
     std::cout << "Probando loadFromFile... ";
     {
-        // Crear archivo temporal de prueba
         std::ofstream file("test_graph.txt");
         file << "0 1\n";      // sources
         file << "3 4\n";      // sinks
@@ -39,8 +35,6 @@ int main() {
         Graph g;
         bool loaded = g.loadFromFile("test_graph.txt");
         assert(loaded);
-        
-        // Verificar estructura
         assert(g.getCapacity(0, 2) == 10);
         assert(g.getCapacity(2, 3) == 5);
         assert(g.getCapacity(2, 4) == 8);
@@ -49,30 +43,17 @@ int main() {
     }
     std::cout << "OK\n";
 
-    // Test 3: Getters
-    std::cout << "Probando getters... ";
+    // Test 3: Constructor de copia
+    std::cout << "Probando constructor de copia... ";
     {
-        // Crear archivo temporal para probar getters
-        std::ofstream file("test_getters.txt");
-        file << "0 1\n";      // sources
-        file << "3 4\n";      // sinks
-        file << "0 2 10\n";   // edges
-        file << "1 2 8\n";
-        file.close();
-
-        Graph g;
-        g.loadFromFile("test_getters.txt");
+        Graph g1(3);
+        g1.addEdge(0, 1, 10);
+        g1.addEdge(1, 2, 5);
         
-        // Verificar getSources y getSinks
-        const auto& sources = g.getSources();
-        const auto& sinks = g.getSinks();
-        
-        assert(sources.size() == 2);
-        assert(sources[0] == 0 && sources[1] == 1);
-        assert(sinks.size() == 2);
-        assert(sinks[0] == 3 && sinks[1] == 4);
-        
-        std::remove("test_getters.txt");
+        Graph g2(g1);
+        assert(g2.getCapacity(0, 1) == 10);
+        assert(g2.getCapacity(1, 2) == 5);
+        assert(g2.size() == g1.size());
     }
     std::cout << "OK\n";
 

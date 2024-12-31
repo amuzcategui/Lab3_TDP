@@ -32,7 +32,9 @@ int main() {
         int option;
         std::cin >> option;
         
-        if (option == 2) break;
+        if (option == 2) {
+            std::cout << "¡Gracias por usar el programa!\n";
+            break;}
         
         if (option == 1) {
             std::cout << "Ingrese nombre del archivo: ";
@@ -42,6 +44,10 @@ int main() {
                 Algorithm::Result result = Algorithm::solve(graph);
                 printResult(result);
             }
+        }
+
+        if (option != 1 && option != 2) {
+            std::cout << "Opción inválida\n";
         }
     }
     

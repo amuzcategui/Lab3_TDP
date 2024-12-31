@@ -14,22 +14,19 @@ Algorithm::Result Algorithm::solve(Graph& graph) {
     int superSource, superSink;
     graph.addSuperSourceAndSink(superSource, superSink);
     
-    result.total_flow = maxFlow(graph, superSource, superSink);
+    Flow flow(graph.size());
     
+    // Calcular el flujo máximo usando Dinic
+    result.total_flow = maxFlow(graph, flow, superSource, superSink);
+    
+    // Calcular flujos de fuentes
     for (int source : graph.getSources()) {
-        int flow = 0;
-        for (int v : graph.getAdj(source)) {
-            flow += std::max(0, graph.getCurrentFlow(source, v));
-        }
-        result.source_flows.push_back({source, flow});
+        result.source_flows.push_back({source, flow.getOutgoingFlow(source)});
     }
     
+    // Calcular flujos de sumideros
     for (int sink : graph.getSinks()) {
-        int flow = 0;
-        for (int u : graph.getAdj(sink)) {
-            flow += std::max(0, graph.getCurrentFlow(u, sink));
-        }
-        result.sink_flows.push_back({sink, flow});
+        result.sink_flows.push_back({sink, flow.getIncomingFlow(sink)});
     }
     
     auto end = std::chrono::high_resolution_clock::now();
@@ -38,25 +35,34 @@ Algorithm::Result Algorithm::solve(Graph& graph) {
     return result;
 }
 
-
 /**
  * @brief Método para calcular el flujo máximo con el algoritmo de Edmonds-Karp
  * 
  * @param graph Grafo de entrada
  * 
+ * @param flow Flujo actual
+ * 
+ * @param source Vértice origen
+ * 
+ * @param sink Vértice destino
+ * 
  * @return Result Estructura con los resultados del algoritmo
  */
-int Algorithm::maxFlow(Graph& graph, int source, int sink) {
-    State state(graph.size());
+int Algorithm::maxFlow(Graph& graph, Flow& flow, int source, int sink) {
+    State state(graph.size(), flow);
     int total_flow = 0;
     
     while (state.bfs(graph, source, sink)) {
         std::fill(state.getNextArray().begin(), state.getNextArray().end(), 0);
         
-        while (int flow = state.dfs(graph, source, sink, INT_MAX)) {
-            total_flow += flow;
-        }
+        // Optimización: Buscar múltiples flujos bloqueantes en el mismo grafo de niveles
+        int blocking_flow;
+        do {
+            blocking_flow = state.dfs(graph, source, sink, INT_MAX);
+            total_flow += blocking_flow;
+        } while (blocking_flow > 0);
     }
     
     return total_flow;
 }
+

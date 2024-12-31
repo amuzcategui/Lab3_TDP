@@ -34,20 +34,20 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -c $<
 
 # Reglas para compilar y ejecutar los tests
-test_algorithm: $(TEST_ALGORITHM).cpp Flow.o Algorithm.o Graph.o State.o
-	$(CXX) $(CXXFLAGS) -o $(TEST_ALGORITHM) $^
+test_algorithm: $(TEST_ALGORITHM).cpp flow.o Algorithm.o Graph.o State.o
+	$(CXX) $(CXXFLAGS) -o $(TEST_ALGORITHM) $(TEST_ALGORITHM).cpp flow.o Algorithm.o Graph.o State.o
 	./$(TEST_ALGORITHM)
 
-test_state: $(TEST_STATE).cpp State.o Graph.o Flow.o
-	$(CXX) $(CXXFLAGS) -o $(TEST_STATE) $^
+test_state: $(TEST_STATE).cpp State.o Graph.o flow.o
+	$(CXX) $(CXXFLAGS) -o $(TEST_STATE) $(TEST_STATE).cpp State.o Graph.o flow.o
 	./$(TEST_STATE)
 
-test_flow: $(TEST_FLOW).cpp Flow.o
-	$(CXX) $(CXXFLAGS) -o $(TEST_FLOW) $^
+test_flow: $(TEST_FLOW).cpp Flow.o 
+	$(CXX) $(CXXFLAGS) -o $(TEST_FLOW) $(TEST_FLOW).cpp Flow.o
 	./$(TEST_FLOW)
 
-test_graph: $(TEST_GRAPH).cpp Graph.o Flow.o
-	$(CXX) $(CXXFLAGS) -o $(TEST_GRAPH) $^
+test_graph: $(TEST_GRAPH).cpp Graph.o 
+	$(CXX) $(CXXFLAGS) -o $(TEST_GRAPH) $(TEST_GRAPH).cpp Graph.o 
 	./$(TEST_GRAPH)
 
 # Regla para ejecutar todos los tests

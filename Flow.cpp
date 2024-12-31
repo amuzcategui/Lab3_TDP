@@ -30,7 +30,7 @@ Flow::Flow(const Flow& other) :
  */
 void Flow::updateFlow(int u, int v, int flow) {
     flow_matrix[u][v] += flow;
-    flow_matrix[v][u] -= flow;  // Update reverse flow
+    flow_matrix[v][u] -= flow;
 }
 
 /**
@@ -101,3 +101,19 @@ int Flow::getIncomingFlow(int vertex) const {
     }
     return total;
 }
+
+/**
+ * @brief Obtiene la capacidad residual máxima de un vértice
+ * 
+ * @param u Vértice
+ * 
+ * @return int Capacidad residual máxima
+ * 
+ */
+int Flow::getMaxResidual(int u) {
+    int total = 0;
+    for (int v = 0; v < num_vertices; ++v) {
+        total += flow_matrix[u][v];
+    }
+    return total;
+}   

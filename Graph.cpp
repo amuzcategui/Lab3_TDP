@@ -6,7 +6,7 @@
  * @param n Número de vértices
  * 
  */
-Graph::Graph(int n) : vertices(n), superSource(-1), superSink(-1), flow(n) {
+Graph::Graph(int n) : vertices(n), superSource(-1), superSink(-1) {
     resize(n);
 }
 
@@ -17,10 +17,9 @@ Graph::Graph(int n) : vertices(n), superSource(-1), superSink(-1), flow(n) {
  * 
  */
 void Graph::resize(int newSize) {
-    vertices = newSize;
-    capacity.resize(vertices, vector<int>(vertices, 0));
-    flow.resize(vertices);
-    adj.resize(vertices);
+        vertices = newSize;
+        capacity.resize(vertices, std::vector<int>(vertices, 0));
+        adj.resize(vertices);
 }
 
 /**
@@ -32,7 +31,6 @@ void Graph::clear() {
     adj.clear();
     sources.clear();
     sinks.clear();
-    flow.clear();
     vertices = 0;
 }
 
@@ -139,32 +137,33 @@ int Graph::size() const {
  * @param superSink Supersumidero
  * 
  */
-void Graph::addSuperSourceAndSink(int& superSource, int& superSink) {
-    superSource = vertices;
-    superSink = vertices + 1;
-    resize(vertices + 2);
-    
-    // Conectar superfuente a cada fuente original
-    for (int src : sources) {
-        int totalCap = 0;
-        for (int v : adj[src]) {
-            totalCap += capacity[src][v];
+void Graph::addSuperSourceAndSink(int& outSuperSource, int& outSuperSink) {
+        superSource = vertices;
+        superSink = vertices + 1;
+        resize(vertices + 2);
+        
+        for (int src : sources) {
+            int totalCap = 0;
+            for (int v : adj[src]) {
+                totalCap += capacity[src][v];
+            }
+            if (totalCap > 0) {
+                addEdge(superSource, src, totalCap);
+            }
         }
-        if (totalCap > 0) {
-            addEdge(superSource, src, totalCap);
+        
+        for (int snk : sinks) {
+            int totalCap = 0;
+            for (int u : adj[snk]) {
+                totalCap += capacity[u][snk];
+            }
+            if (totalCap > 0) {
+                addEdge(snk, superSink, totalCap);
+            }
         }
-    }
-    
-    // Conectar cada sumidero original al supersumidero
-    for (int snk : sinks) {
-        int totalCap = 0;
-        for (int u : adj[snk]) {
-            totalCap += capacity[u][snk];
-        }
-        if (totalCap > 0) {
-            addEdge(snk, superSink, totalCap);
-        }
-    }
+
+        outSuperSource = superSource;
+        outSuperSink = superSink;
 }
 
 /**
@@ -251,29 +250,5 @@ Graph::Graph(const Graph& other) :
     capacity(other.capacity),
     adj(other.adj),
     sources(other.sources),
-    sinks(other.sinks),
-    flow(other.flow) {}
+    sinks(other.sinks) {}
 
-/**
- * @brief Obtiene el flujo actual entre dos vértices
- * 
- * @param u Vértice origen
- * @param v Vértice destino
- * 
- * @return int Flujo actual
- */
-int Graph::getCurrentFlow(int u, int v) const {
-    return flow.getCurrentFlow(u, v);
-}
-
-/**
- * @brief Actualiza el flujo entre dos vértices
- * 
- * @param u Vértice origen
- * @param v Vértice destino
- * @param f Flujo
- * 
- */
-void Graph::updateFlow(int u, int v, int f) {
-    flow.updateFlow(u, v, f);
-}

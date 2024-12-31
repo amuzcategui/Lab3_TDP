@@ -1,7 +1,6 @@
 #ifndef FLOW_H
 #define FLOW_H
 
-// TENGO QUE INTEGRARLO BIEN EN ALGORITHM Y EN STATE
 #include <vector>
 
 class Flow {
@@ -27,6 +26,8 @@ public:
 
     // Método para obtener el flujo total que entra a un vértice
     int getIncomingFlow(int vertex) const;
+
+    int getMaxResidual(int u);
 };
 
 #endif // FLOW_H

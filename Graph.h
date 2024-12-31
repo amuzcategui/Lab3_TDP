@@ -8,7 +8,6 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm> 
-#include "Flow.h"
 using namespace std;
 
 class Graph {
@@ -20,7 +19,6 @@ private:
     vector<int> sinks; //Sumideros
     int superSource; //Super fuente
     int superSink; //Super sumidero
-    Flow flow; //Flujo
     
     void resize(int newSize); //Redimensionar el grafo
     void clear(); //Limpiar el grafo
@@ -34,10 +32,6 @@ public:
     
     // Constructor de copia
     Graph(const Graph& other);
-
-    // Métodos para flujo
-    int getCurrentFlow(int u, int v) const;
-    void updateFlow(int u, int v, int f);
 
     // Métodos para manejar la estructura del grafo
     void addEdge(int u, int v, int cap);

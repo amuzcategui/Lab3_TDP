@@ -20,7 +20,8 @@ public:
     static Result solve(Graph& graph); // método para obtener el resultado
 
 private:
-    static int maxFlow(Graph& graph, int source, int sink); // método para calcular el flujo máximo
+    static int maxFlow(Graph& graph, Flow& flow, int source, int sink); // método para calcular el flujo máximo
+    int findBlockingFlow(Graph& graph, State& state, int u, int sink, int flow_limit); // método para encontrar el flujo bloqueante
 };
 
 #endif // ALGORITHM_H

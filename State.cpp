@@ -1,63 +1,85 @@
+#include <queue>
+#include <vector>
+#include <limits>
 #include "State.h"
 
 /**
- * @brief Método para realizar una búsqueda en amplitud
+ * @brief Calcula la distancia mínima estimada entre dos nodos (heurística optimizada).
  * 
- * @param graph Grafo de entrada
- * @param source Vértice origen
- * @param sink Vértice destino
+ * @param u Nodo actual.
+ * @param sink Nodo destino.
  * 
- * @return bool Verdadero si se encontró un camino, falso en caso contrario
+ * @return int Heurística (distancia estimada).
+ */
+inline int State::calculateHeuristic(int u, int sink) const {
+    return abs(u - sink); // Penaliza caminos de baja capacidad, evitando división por cero
+}
+
+/**
+ * @brief BFS optimizado para encontrar niveles y caminos disponibles.
+ * 
+ * @param graph Grafo de entrada.
+ * @param source Nodo origen.
+ * @param sink Nodo destino.
+ * 
+ * @return bool Verdadero si se encuentra un camino, falso en caso contrario.
  */
 bool State::bfs(const Graph& graph, int source, int sink) {
     std::fill(level.begin(), level.end(), -1);
     level[source] = 0;
-    
-    std::queue<int> q;
-    q.push(source);
-    
-    while (!q.empty()) {
-        int u = q.front();
-        q.pop();
-        
+
+    std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<>> pq;
+    pq.emplace(0, source);
+
+    while (!pq.empty()) {
+        int u = pq.top().second;
+        pq.pop();
+
         for (int v : graph.getAdj(u)) {
-            if (level[v] < 0 && graph.getCapacity(u, v) > 0) {
+            int residual = graph.getCapacity(u, v) - flow.getCurrentFlow(u, v);
+            if (level[v] == -1 && residual > 0) {
                 level[v] = level[u] + 1;
-                q.push(v);
+
+                if (v == sink) {
+                    return true; // Termina cuando alcanzamos el destino
+                }
+
+                int heuristic = calculateHeuristic(v, sink);
+                pq.emplace(heuristic, v);
             }
         }
     }
-    
-    return level[sink] >= 0;
+
+    return false; // No se encontró un camino
 }
 
 /**
- * @brief Método para realizar una búsqueda en profundidad
+ * @brief DFS optimizado para buscar el flujo máximo.
  * 
- * @param graph Grafo de entrada
- * @param u Vértice actual
- * @param sink Vértice destino
- * @param flow Flujo actual
+ * @param graph Grafo de entrada.
+ * @param u Nodo actual.
+ * @param sink Nodo destino.
+ * @param flow_limit Flujo máximo permitido.
  * 
- * @return int Flujo encontrado
+ * @return int Flujo encontrado.
  */
-int State::dfs(Graph& graph, int u, int sink, int flow) {
-    if (u == sink) return flow;
-    
-    for (; next[u] < graph.getAdj(u).size(); next[u]++) {
+int State::dfs(Graph& graph, int u, int sink, int flow_limit) {
+    if (u == sink) return flow_limit;
+
+    for (; next[u] < graph.getAdj(u).size(); ++next[u]) {
         int v = graph.getAdj(u)[next[u]];
-        
-        if (level[v] == level[u] + 1 && graph.getCapacity(u, v) > 0) {
-            int curr_flow = std::min(flow, graph.getCapacity(u, v));
-            int temp_flow = dfs(graph, v, sink, curr_flow);
-            
-            if (temp_flow > 0) {
-                graph.updateCapacity(u, v, temp_flow);
-                graph.updateFlow(u, v, temp_flow);  
-                return temp_flow;
+        int residual = graph.getCapacity(u, v) - flow.getCurrentFlow(u, v);
+
+        if (level[v] == level[u] + 1 && residual > 0) {
+            int bottleneck = dfs(graph, v, sink, std::min(flow_limit, residual));
+            if (bottleneck > 0) {
+                flow.updateFlow(u, v, bottleneck);
+                return bottleneck;
             }
         }
     }
-    
+
     return 0;
 }
+
+
