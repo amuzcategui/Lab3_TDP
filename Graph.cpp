@@ -1,202 +1,279 @@
 #include "Graph.h"
 
 /**
- * Constructor de la clase Graph.
+ * @brief Constructor de la clase Graph
  * 
- * @return Instancia de Graph.
+ * @param n Número de vértices
  * 
  */
-Graph::Graph() {}
+Graph::Graph(int n) : vertices(n), superSource(-1), superSink(-1), flow(n) {
+    resize(n);
+}
 
 /**
- * Método para añadir una arista al grafo.
+ * @brief Redimensiona el grafo
  * 
- * @param from Nodo de origen.
- * @param to Nodo de destino.
- * @param capacity Capacidad de la arista.
+ * @param newSize Nuevo tamaño del grafo
  * 
  */
-void Graph::addEdge(int from, int to, int capacity) {
-    state.addEdge(from, to, capacity);
+void Graph::resize(int newSize) {
+    vertices = newSize;
+    capacity.resize(vertices, vector<int>(vertices, 0));
+    flow.resize(vertices);
+    adj.resize(vertices);
+}
+
+/**
+ * @brief Limpia el grafo
+ * 
+ */
+void Graph::clear() {
+    capacity.clear();
+    adj.clear();
+    sources.clear();
+    sinks.clear();
+    flow.clear();
+    vertices = 0;
+}
+
+/**
+ * @brief Obtiene las fuentes del grafo
+ * 
+ * @return vector<int> Fuentes
+ * 
+ */
+const vector<int>& Graph::getSources() const {
+    return sources;
+}
+
+/**
+ * @brief Obtiene los sumideros del grafo
+ * 
+ * @return vector<int> Sumideros
+ * 
+ */
+const vector<int>& Graph::getSinks() const {
+    return sinks;
+}
+
+/**
+ * @brief Agrega una arista al grafo
+ * 
+ * @param u Vértice origen
+ * @param v Vértice destino
+ * @param cap Capacidad de la arista
+ * 
+ */
+void Graph::addEdge(int u, int v, int cap) {
+    if (u >= vertices || v >= vertices) {
+        int maxVertex = std::max(u, v);
+        resize(maxVertex + 1);
+    }
+
+    capacity[u][v] = cap;
+
+    if (capacity[v][u] == 0) {
+        capacity[v][u] = 0;
+    }
+
+    if (std::find(adj[u].begin(), adj[u].end(), v) == adj[u].end()) {
+        adj[u].push_back(v);
+    }
+    if (std::find(adj[v].begin(), adj[v].end(), u) == adj[v].end()) {
+        adj[v].push_back(u);
+    }
+}   
+
+/**
+ * @brief Obtiene la capacidad de una arista
+ * 
+ * @param u Vértice origen
+ * @param v Vértice destino
+ * 
+ * @return int Capacidad de la arista
+ * 
+ */
+int Graph::getCapacity(int u, int v) const {
+    return capacity[u][v];
+}
+
+/**
+ * @brief Obtiene la lista de adyacencia de un vértice
+ * 
+ * @param u Vértice
+ * 
+ * @return vector<int> Lista de adyacencia
+ * 
+ */
+const std::vector<int>& Graph::getAdj(int u) const {
+    return adj[u];
+}
+
+/**
+ * @brief Actualiza la capacidad de una arista
+ * 
+ * @param u Vértice origen
+ * @param v Vértice destino
+ * @param flow Flujo
+ * 
+ */
+void Graph::updateCapacity(int u, int v, int flow) {
+    capacity[u][v] -= flow;
+    capacity[v][u] += flow;
+}
+
+/**
+ * @brief Obtiene el tamaño del grafo
+ * 
+ * @return int Tamaño del grafo
+ * 
+ */
+int Graph::size() const {
+    return vertices;
+}
+
+/**
+ * @brief Agrega la superfuente y supersumidero al grafo
+ * 
+ * @param superSource Superfuente
+ * @param superSink Supersumidero
+ * 
+ */
+void Graph::addSuperSourceAndSink(int& superSource, int& superSink) {
+    superSource = vertices;
+    superSink = vertices + 1;
+    resize(vertices + 2);
     
-    int maxVertex = std::max(from, to);
-    if (maxVertex >= state.getNumVertices()) {
-        state.setNumVertices(maxVertex + 1);
+    // Conectar superfuente a cada fuente original
+    for (int src : sources) {
+        int totalCap = 0;
+        for (int v : adj[src]) {
+            totalCap += capacity[src][v];
+        }
+        if (totalCap > 0) {
+            addEdge(superSource, src, totalCap);
+        }
     }
-}
-
-/**
- * Método para obtener la capacidad residual de una arista.
- * 
- * @param from Nodo de origen.
- * @param to Nodo de destino.
- * 
- * @return Capacidad residual de la arista.
- * 
- */
-int Graph::getResidualCapacity(int from, int to) const {
-    return state.getResidualCapacity(from, to);
-}
-
-/**
- * Método para actualizar el flujo de una arista.
- * 
- * @param from Nodo de origen.
- * @param to Nodo de destino.
- * @param flow Flujo adicional.
- * 
- */
-void Graph::updateFlow(int from, int to, int flow) {
-    state.updateFlow(from, to, flow);
-}
-
-/**
- * Método para reiniciar los flujos del grafo.
- * 
- */
-void Graph::resetFlows() {
-    state.resetFlows();
-}
-
-/**
- * Método para obtener el número de vértices del grafo.
- * 
- * @return Número de vértices del grafo.
- * 
- */
-int Graph::getNumVertices() const {
-    return state.getNumVertices();
-}
-
-/**
- * Método para obtener el nodo fuente del grafo.
- * 
- * @return Nodo fuente del grafo.
- * 
- */
-int Graph::getSuperSource() const {
-    return state.getSuperSource();
-}
-
-/**
- * Método para obtener el nodo sumidero del grafo.
- * 
- * @return Nodo sumidero del grafo.
- * 
- */
-int Graph::getSuperSink() const {
-    return state.getSuperSink();
-}
-
-/**
- * Método para obtener el flujo actual de una arista.
- * 
- * @param from Nodo de origen.
- * @param to Nodo de destino.
- * 
- * @return Flujo actual de la arista.
- * 
- */
-int Graph::getCurrentFlow(int from, int to) const {
-    return state.getFlow(from, to);
-}
-
-/**
- * Método para obtener los vecinos de un nodo.
- * 
- * @param vertex Nodo del que se desean obtener los vecinos.
- * 
- * @return Vector con los nodos vecinos.
- * 
- */
-std::vector<int> Graph::getNeighbors(int vertex) const {
-    return state.getNeighbors(vertex);
-}
-
-/**
- * Método para añadir un nodo fuente y un nodo sumidero al grafo.
- * 
- * @param sources Vector con los nodos fuente.
- * @param sinks Vector con los nodos sumidero.
- * 
- */
-void Graph::addSuperSourceAndSink(const std::vector<int>& sources, const std::vector<int>& sinks) {
-    int newSuperSource = state.getNumVertices();
-    int newSuperSink = newSuperSource + 1;
     
-    state.setSuperSource(newSuperSource);
-    state.setSuperSink(newSuperSink);
-    state.setNumVertices(newSuperSink + 1);
-
-    // Conectar fuentes
-    for (int source : sources) {
-        int sourceCapacity = 0;
-        for (int neighbor : getNeighbors(source)) {
-            sourceCapacity += state.getCapacity(source, neighbor);
+    // Conectar cada sumidero original al supersumidero
+    for (int snk : sinks) {
+        int totalCap = 0;
+        for (int u : adj[snk]) {
+            totalCap += capacity[u][snk];
         }
-        addEdge(newSuperSource, source, sourceCapacity);
-    }
-
-    // Conectar sumideros
-    for (int sink : sinks) {
-        int sinkCapacity = 0;
-        for (int vertex = 0; vertex < newSuperSource; vertex++) {
-            if (state.hasEdge(vertex, sink)) {
-                sinkCapacity += state.getCapacity(vertex, sink);
-            }
+        if (totalCap > 0) {
+            addEdge(snk, superSink, totalCap);
         }
-        addEdge(sink, newSuperSink, sinkCapacity);
     }
 }
 
 /**
- * Método para cargar un grafo desde un archivo.
+ * @brief Carga un grafo desde un archivo
  * 
- * @param filename Nombre del archivo.
- * @param sources Vector donde se almacenarán los nodos fuente.
- * @param sinks Vector donde se almacenarán los nodos sumidero.
+ * @param filename Nombre del archivo
+ * 
+ * @return bool true si se pudo cargar el grafo, false en caso contrario
  * 
  */
-void Graph::loadFromFile(const std::string& filename, std::vector<int>& sources, std::vector<int>& sinks) {
+bool Graph::loadFromFile(const std::string& filename) {
     std::ifstream file(filename);
-    if (!file.is_open()) {
-        throw std::runtime_error("Error al abrir el archivo: " + filename);
+    if (!file) {
+        std::cerr << "No se pudo abrir el archivo: " << filename << std::endl;
+        return false;
     }
 
+    // Limpiar el grafo actual
+    clear();
+    
     std::string line;
-    int vertex;
-
-    if (std::getline(file, line)) {
-        std::istringstream iss(line);
-        while (iss >> vertex) {
-            if (vertex < 0) {
-                throw std::runtime_error("Error: Nodo fuente negativo: " + std::to_string(vertex));
-            }
-            sources.push_back(vertex);
-        }
+    
+    // Leer fuentes
+    if (!std::getline(file, line)) {
+        std::cerr << "Error leyendo fuentes" << std::endl;
+        return false;
     }
-
-    if (std::getline(file, line)) {
-        std::istringstream iss(line);
-        while (iss >> vertex) {
-            if (vertex < 0) {
-                throw std::runtime_error("Error: Nodo sumidero negativo: " + std::to_string(vertex));
-            }
-            sinks.push_back(vertex);
-        }
+    
+    std::istringstream iss(line);
+    int node;
+    while (iss >> node) {
+        sources.push_back(node);
     }
-
-    while (std::getline(file, line)) {
-        std::istringstream iss(line);
-        int from, to, capacity;
-        if (iss >> from >> to >> capacity) {
-            if (capacity < 0) {
-                std::cerr << "Advertencia: Capacidad negativa en el arco (" << from << " -> " << to << ")\n";
-                continue;
-            }
-            addEdge(from, to, capacity);
-        }
+    
+    // Leer sumideros
+    if (!std::getline(file, line)) {
+        std::cerr << "Error leyendo sumideros" << std::endl;
+        return false;
     }
+    
+    iss.clear();
+    iss.str(line);
+    while (iss >> node) {
+        sinks.push_back(node);
+    }
+    
+    // Primera pasada para encontrar el tamaño necesario
+    int u, v, cap;
+    int maxVertex = -1;
+    while (file >> u >> v >> cap) {
+        maxVertex = std::max(maxVertex, std::max(u, v));
+    }
+    
+    if (maxVertex < 0) {
+        std::cerr << "No se encontraron aristas en el archivo" << std::endl;
+        return false;
+    }
+    
+    // Redimensionar el grafo
+    resize(maxVertex + 1);
+    
+    // Volver al inicio para leer las aristas
+    file.clear();
+    file.seekg(0);
+    std::getline(file, line); // Saltar línea de fuentes
+    std::getline(file, line); // Saltar línea de sumideros
+    
+    // Leer y agregar las aristas
+    while (file >> u >> v >> cap) {
+        addEdge(u, v, cap);
+    }
+  
+    return true;
+}
 
-    file.close();
+/**
+ * @brief Constructor de copia de la clase Graph
+ * 
+ * @param other Grafo a copiar
+ * 
+ */
+Graph::Graph(const Graph& other) : 
+    vertices(other.vertices),
+    capacity(other.capacity),
+    adj(other.adj),
+    sources(other.sources),
+    sinks(other.sinks),
+    flow(other.flow) {}
+
+/**
+ * @brief Obtiene el flujo actual entre dos vértices
+ * 
+ * @param u Vértice origen
+ * @param v Vértice destino
+ * 
+ * @return int Flujo actual
+ */
+int Graph::getCurrentFlow(int u, int v) const {
+    return flow.getCurrentFlow(u, v);
+}
+
+/**
+ * @brief Actualiza el flujo entre dos vértices
+ * 
+ * @param u Vértice origen
+ * @param v Vértice destino
+ * @param f Flujo
+ * 
+ */
+void Graph::updateFlow(int u, int v, int f) {
+    flow.updateFlow(u, v, f);
 }

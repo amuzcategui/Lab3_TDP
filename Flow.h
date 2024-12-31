@@ -1,23 +1,32 @@
-// Flow.h
 #ifndef FLOW_H
 #define FLOW_H
 
+// TENGO QUE INTEGRARLO BIEN EN ALGORITHM Y EN STATE
+#include <vector>
+
 class Flow {
 private:
-    int totalFlow;  // Almacena el flujo total en el sistema
+    std::vector<std::vector<int>> flow_matrix; // Matriz de flujo
+    int num_vertices; // Número de vértices
 
 public:
     // Constructor
-    Flow();
+    Flow(int vertices = 0);
 
-    // Incrementar flujo total
-    void addFlow(int flow);
+    // Constructor de copia
+    Flow(const Flow& other);
 
-    // Obtener el flujo total
-    int getTotalFlow() const;
+    // Métodos principales
+    void updateFlow(int u, int v, int flow);
+    int getCurrentFlow(int u, int v) const;
+    void resize(int newSize);
+    void clear();
 
-    // Reiniciar flujo total
-    void resetFlow();
+    // Método para obtener el flujo total que sale de un vértice
+    int getOutgoingFlow(int vertex) const;
+
+    // Método para obtener el flujo total que entra a un vértice
+    int getIncomingFlow(int vertex) const;
 };
 
 #endif // FLOW_H

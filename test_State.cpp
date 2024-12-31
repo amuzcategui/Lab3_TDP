@@ -1,114 +1,92 @@
 #include "State.h"
 #include <cassert>
 #include <iostream>
-#include <sstream>
+#include <climits>
 
 int main() {
     std::cout << "Iniciando pruebas de la clase State...\n\n";
 
-    // Prueba del constructor
-    std::cout << "Probando constructor... ";
+    // Test constructor and initial state
+    std::cout << "Probando constructor y estado inicial... ";
     {
-        State state;
-        assert(state.getNumVertices() == 0);
-        assert(state.getSuperSource() == -1);
-        assert(state.getSuperSink() == -1);
+        State state(5);  // Create state with 5 vertices
+        assert(state.getLevel(0) == -1);  // Initial level should be -1
+        assert(state.getNext(0) == 0);    // Initial next should be 0
     }
     std::cout << "OK\n";
 
-    // Prueba de setters y getters
-    std::cout << "Probando setters y getters... ";
+    // Test BFS
+    std::cout << "Probando BFS... ";
     {
-        State state;
+        Graph graph(4);  // Create a simple graph with 4 vertices
+        graph.addEdge(0, 1, 10);
+        graph.addEdge(1, 2, 5);
+        graph.addEdge(2, 3, 8);
 
-        // Probar setNumVertices y getNumVertices
-        state.setNumVertices(5);
-        assert(state.getNumVertices() == 5);
-
-        // Probar setSuperSource y getSuperSource
-        state.setSuperSource(0);
-        assert(state.getSuperSource() == 0);
-
-        // Probar setSuperSink y getSuperSink
-        state.setSuperSink(4);
-        assert(state.getSuperSink() == 4);
+        State state(4);
+        
+        // Test BFS from source 0 to sink 3
+        bool hasPath = state.bfs(graph, 0, 3);
+        assert(hasPath == true);
+        
+        // Verify levels are set correctly
+        assert(state.getLevel(0) == 0);  // Source level should be 0
+        assert(state.getLevel(1) == 1);  // First vertex after source
+        assert(state.getLevel(2) == 2);  // Second vertex
+        assert(state.getLevel(3) == 3);  // Sink level should be 3
     }
     std::cout << "OK\n";
 
-    // Prueba de operaciones con aristas
-    std::cout << "Probando operaciones con aristas... ";
+    // Test DFS
+    std::cout << "Probando DFS... ";
     {
-        State state;
+        Graph graph(4);
+        // Crear un grafo simple con un solo camino posible
+        graph.addEdge(0, 1, 5);
+        graph.addEdge(1, 2, 5);
+        graph.addEdge(2, 3, 5);
 
-        // Añadir arista y verificar capacidad
-        state.addEdge(0, 1, 10);
-        assert(state.getCapacity(0, 1) == 10);
-        assert(state.getCapacity(1, 0) == 0); // Arista residual
-
-        // Verificar flujo inicial
-        assert(state.getFlow(0, 1) == 0);
-        assert(state.getFlow(1, 0) == 0);
-
-        // Verificar capacidad residual inicial
-        assert(state.getResidualCapacity(0, 1) == 10);
-        assert(state.getResidualCapacity(1, 0) == 0);
-
-        // Verificar existencia de arista
-        assert(state.hasEdge(0, 1) == true);
-        assert(state.hasEdge(2, 3) == false);
+        State state(4);
+        // Configurar los niveles manualmente para simular un BFS previo
+        state.setLevel(0, 0);
+        state.setLevel(1, 1);
+        state.setLevel(2, 2);
+        state.setLevel(3, 3);
+        
+        // Realizar el DFS
+        int flow = state.dfs(graph, 0, 3, INT_MAX);
+        
+        // Verificar que encontró el flujo correcto
+        assert(flow == 5);  // El flujo debería ser el mínimo de las capacidades
+        
+        // Verificar que el camino fue explorado
+        assert(state.getNextArray()[0] <= graph.getAdj(0).size());
     }
     std::cout << "OK\n";
 
-    // Prueba de operaciones de flujo
-    std::cout << "Probando operaciones de flujo... ";
+    // Test reset functionality
+    std::cout << "Probando reset... ";
     {
-        State state;
-
-        // Configurar arista
-        state.addEdge(0, 1, 10);
-
-        // Actualizar flujo
-        state.updateFlow(0, 1, 5);
-        assert(state.getFlow(0, 1) == 5);
-        assert(state.getFlow(1, 0) == -5); // Flujo residual
-
-        // Verificar capacidad residual después del flujo
-        assert(state.getResidualCapacity(0, 1) == 5);
-        assert(state.getResidualCapacity(1, 0) == 5);
-
-        // Probar resetFlows
-        state.resetFlows();
-        assert(state.getFlow(0, 1) == 0);
-        assert(state.getFlow(1, 0) == 0);
-    }
-    std::cout << "OK\n";
-
-    // Prueba de obtención de vecinos
-    std::cout << "Probando obtención de vecinos... ";
-    {
-        State state;
-
-        // Añadir varias aristas desde el nodo 0
-        state.addEdge(0, 1, 10);
-        state.addEdge(0, 2, 15);
-        state.addEdge(0, 3, 20);
-
-        // Obtener vecinos del nodo 0
-        std::vector<int> neighbors = state.getNeighbors(0);
-        assert(neighbors.size() == 3);
-
-        // Verificar que todos los vecinos esperados estén presentes
-        bool found1 = false, found2 = false, found3 = false;
-        for (int neighbor : neighbors) {
-            if (neighbor == 1) found1 = true;
-            if (neighbor == 2) found2 = true;
-            if (neighbor == 3) found3 = true;
-        }
-        assert(found1 && found2 && found3);
-
-        // Verificar vecinos de un nodo sin aristas
-        neighbors = state.getNeighbors(4);
-        assert(neighbors.empty());
+        State state(4);
+        
+        // Set some levels
+        state.setLevel(0, 1);
+        state.setLevel(1, 2);
+        state.setLevel(2, 3);
+        
+        // Set some next values
+        state.setNext(0, 1);
+        state.setNext(1, 2);
+        
+        // Reset state
+        state.reset();
+        
+        // Verify everything is reset
+        assert(state.getLevel(0) == -1);
+        assert(state.getLevel(1) == -1);
+        assert(state.getLevel(2) == -1);
+        assert(state.getNext(0) == 0);
+        assert(state.getNext(1) == 0);
     }
     std::cout << "OK\n";
 

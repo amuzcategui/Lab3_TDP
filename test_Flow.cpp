@@ -1,95 +1,60 @@
 #include "Flow.h"
 #include <cassert>
 #include <iostream>
-#include <sstream>
 
 int main() {
     std::cout << "Iniciando pruebas de la clase Flow...\n\n";
 
-    // Prueba del constructor
+    // Test 1: Constructor y tamaño inicial
     std::cout << "Probando constructor... ";
     {
-        Flow flow;
-        assert(flow.getTotalFlow() == 0);
+        Flow flow(5);  // Crear flow con 5 vértices
+        assert(flow.getCurrentFlow(0, 1) == 0);  // Verificar flujo inicial
+        assert(flow.getOutgoingFlow(0) == 0);    // Verificar flujo saliente
+        assert(flow.getIncomingFlow(0) == 0);    // Verificar flujo entrante
     }
     std::cout << "OK\n";
 
-    // Prueba de addFlow
-    std::cout << "Probando addFlow... ";
+    // Test 2: Actualización de flujo
+    std::cout << "Probando updateFlow... ";
     {
-        Flow flow;
-
+        Flow flow(3);
+        
         // Añadir flujo positivo
-        flow.addFlow(10);
-        assert(flow.getTotalFlow() == 10);
-
-        // Añadir más flujo
-        flow.addFlow(5);
-        assert(flow.getTotalFlow() == 15);
-
-        // Añadir flujo cero
-        flow.addFlow(0);
-        assert(flow.getTotalFlow() == 15);
+        flow.updateFlow(0, 1, 10);
+        assert(flow.getCurrentFlow(0, 1) == 10);
+        assert(flow.getCurrentFlow(1, 0) == -10);  // Flujo inverso
+        
+        // Verificar flujos totales
+        assert(flow.getOutgoingFlow(0) == 10);
+        assert(flow.getIncomingFlow(1) == 10);
     }
     std::cout << "OK\n";
 
-    // Prueba de resetFlow
-    std::cout << "Probando resetFlow... ";
+    // Test 3: Resize
+    std::cout << "Probando resize... ";
     {
-        Flow flow;
-
-        // Añadir algo de flujo
-        flow.addFlow(10);
-        flow.addFlow(5);
-        assert(flow.getTotalFlow() == 15);
-
-        // Resetear el flujo
-        flow.resetFlow();
-        assert(flow.getTotalFlow() == 0);
-
-        // Verificar que se puede añadir flujo después del reset
-        flow.addFlow(7);
-        assert(flow.getTotalFlow() == 7);
+        Flow flow(2);
+        flow.updateFlow(0, 1, 5);
+        
+        flow.resize(4);  // Aumentar tamaño
+        assert(flow.getCurrentFlow(0, 1) == 5);  // Verificar que se mantiene el flujo
+        assert(flow.getCurrentFlow(2, 3) == 0);  // Verificar nuevos vértices
     }
     std::cout << "OK\n";
 
-    // Prueba de secuencia de operaciones
-    std::cout << "Probando secuencia de operaciones... ";
+    // Test 4: Clear
+    std::cout << "Probando clear... ";
     {
-        Flow flow;
-
-        // Secuencia de operaciones
-        flow.addFlow(10);      // Total: 10
-        flow.addFlow(5);       // Total: 15
-        flow.resetFlow();      // Total: 0
-        flow.addFlow(7);       // Total: 7
-        flow.addFlow(3);       // Total: 10
-        assert(flow.getTotalFlow() == 10);
-
-        // Reset y verificar
-        flow.resetFlow();
-        assert(flow.getTotalFlow() == 0);
+        Flow flow(3);
+        flow.updateFlow(0, 1, 5);
+        flow.clear();
+        
+        flow.resize(2);  // Nuevo tamaño después de clear
+        assert(flow.getCurrentFlow(0, 1) == 0);
     }
     std::cout << "OK\n";
 
-    // Prueba de casos límite
-    std::cout << "Probando casos límite... ";
-    {
-        Flow flow;
-
-        // Añadir flujos muy grandes
-        flow.addFlow(1000000);
-        flow.addFlow(2000000);
-        assert(flow.getTotalFlow() == 3000000);
-
-        // Reset y añadir flujos pequeños
-        flow.resetFlow();
-        flow.addFlow(1);
-        flow.addFlow(2);
-        assert(flow.getTotalFlow() == 3);
-    }
-    std::cout << "OK\n";
-
-    std::cout << "\nTodas las pruebas pasaron exitosamente!\n";
+    std::cout << "\nTodas las pruebas de Flow pasaron exitosamente!\n";
     return 0;
 }

@@ -2,45 +2,39 @@
 #ifndef STATE_H
 #define STATE_H
 
-#include <unordered_map>
 #include <vector>
+#include <queue>
+#include "Graph.h"
 
 class State {
 private:
-    // Lista de adyacencia
-    std::unordered_map<int, std::unordered_map<int, int>> adjacencyList;
-    
-    // Lista de flujos
-    std::unordered_map<int, std::unordered_map<int, int>> flowList;
-    
-    // Nodos fuente y sumidero
-    int superSource;
-    int superSink;
-    
-    // Número de vértices
-    int numVertices;
+    std::vector<int> level; // Niveles de los vértices
+    std::vector<size_t> next; // Siguiente vértice a visitar
+    int n; // Número de vértices
 
 public:
-    State();
-
-    // Métodos de acceso básicos
-    void setNumVertices(int num);
-    int getNumVertices() const;
-    void setSuperSource(int source);
-    void setSuperSink(int sink);
-    int getSuperSource() const;
-    int getSuperSink() const;
-
-    // Métodos para manejar aristas y flujos
-    void addEdge(int from, int to, int capacity);
-    int getCapacity(int from, int to) const;
-    int getFlow(int from, int to) const;
-    void updateFlow(int from, int to, int additionalFlow);
-    int getResidualCapacity(int from, int to) const;
-    void resetFlows();
-
-    // Métodos auxiliares
-    std::vector<int> getNeighbors(int vertex) const;
-    bool hasEdge(int from, int to) const;
+    // Constructor
+    State(int vertices) : level(vertices, -1), next(vertices, 0), n(vertices) {}
+    
+    // Métodos para resetear el estado
+    void reset() {
+        std::fill(level.begin(), level.end(), -1);
+        std::fill(next.begin(), next.end(), 0);
+    }
+    
+    // Métodos para BFS y DFS
+    bool bfs(const Graph& graph, int source, int sink);
+    int dfs(Graph& graph, int vertex, int sink, int flow);
+    
+    // Métodos para acceder a level
+    int getLevel(int vertex) const { return level[vertex]; }
+    void setLevel(int vertex, int l) { level[vertex] = l; }
+    
+    // Métodos para acceder a next
+    size_t getNext(int vertex) const { return next[vertex]; }
+    void setNext(int vertex, size_t n) { next[vertex] = n; }
+    std::vector<size_t>& getNextArray() { return next; }
+    const std::vector<size_t>& getNextArray() const { return next; }
 };
-#endif
+
+#endif // STATE_H

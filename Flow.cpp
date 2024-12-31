@@ -1,36 +1,103 @@
 #include "Flow.h"
 
 /**
- * Constructor de la clase Flow.
+ * @brief Constructor de la clase Flow
  * 
- * @return Instancia de Flow.
- */
-Flow::Flow() : totalFlow(0) {}
-
-/**
- * Incrementar flujo total.
- * 
- * @param flow Flujo a incrementar.
+ * @param vertices Número de vértices
  * 
  */
-void Flow::addFlow(int flow) {
-    totalFlow += flow;
+Flow::Flow(int vertices) : num_vertices(vertices) {
+    resize(vertices);
 }
 
 /**
- * Obtener el flujo total.
+ * @brief Constructor de copia de la clase Flow
  * 
- * @return Flujo total.
+ * @param other Flujo a copiar
  * 
  */
-int Flow::getTotalFlow() const {
-    return totalFlow;
+Flow::Flow(const Flow& other) : 
+    flow_matrix(other.flow_matrix),
+    num_vertices(other.num_vertices) {}
+
+/**
+ * @brief Actualiza el flujo entre dos vértices
+ * 
+ * @param u Vértice origen
+ * @param v Vértice destino
+ * @param flow Flujo
+ * 
+ */
+void Flow::updateFlow(int u, int v, int flow) {
+    flow_matrix[u][v] += flow;
+    flow_matrix[v][u] -= flow;  // Update reverse flow
 }
 
 /**
- * Reiniciar flujo total.
+ * @brief Obtiene el flujo actual entre dos vértices
+ * 
+ * @param u Vértice origen
+ * @param v Vértice destino
+ * 
+ * @return int Flujo actual
  * 
  */
-void Flow::resetFlow() {
-    totalFlow = 0;
+int Flow::getCurrentFlow(int u, int v) const {
+    return flow_matrix[u][v];
+}
+
+/**
+ * @brief Redimensiona la matriz de flujo
+ * 
+ * @param newSize Nuevo tamaño de la matriz
+ * 
+ */
+void Flow::resize(int newSize) {
+    num_vertices = newSize;
+    flow_matrix.resize(num_vertices, std::vector<int>(num_vertices, 0));
+}
+
+/**
+ * @brief Limpia la matriz de flujo
+ * 
+ */
+void Flow::clear() {
+    flow_matrix.clear();
+    num_vertices = 0;
+}
+
+/**
+ * @brief Obtiene el flujo total que sale de un vértice
+ * 
+ * @param vertex Vértice
+ * 
+ * @return int Flujo total
+ * 
+ */
+int Flow::getOutgoingFlow(int vertex) const {
+    int total = 0;
+    for (int v = 0; v < num_vertices; ++v) {
+        if (flow_matrix[vertex][v] > 0) {
+            total += flow_matrix[vertex][v];
+        }
+    }
+    return total;
+}
+
+/**
+ * @brief Obtiene el flujo total que entra a un vértice
+ * 
+ * @param vertex Vértice
+ * 
+ * @return int Flujo total
+ * 
+ */
+int Flow::getIncomingFlow(int vertex) const {
+    int total = 0;
+    for (int u = 0; u < num_vertices; ++u) {
+        if (flow_matrix[u][vertex] > 0) {
+            total += flow_matrix[u][vertex];
+        }
+    }
+    return total;
 }

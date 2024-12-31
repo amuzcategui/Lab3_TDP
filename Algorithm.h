@@ -1,25 +1,26 @@
+// Algorithm.h
 #ifndef ALGORITHM_H
 #define ALGORITHM_H
 
-#include <vector>
-#include <queue>
-#include <chrono>
 #include "Graph.h"
+#include "State.h"
 #include "Flow.h"
+#include <chrono>
+#include <climits>
 
 class Algorithm {
-private:
-    Graph& graph; // Referencia al grafo sobre el que se ejecutará el algoritmo
-    Flow flowManager; // Administrador de flujo
-    std::chrono::duration<double> executionTime; // Tiempo de ejecución del algoritmo
-
 public:
-    Algorithm(Graph& g); // Constructor
-    bool buildLevelGraph(std::vector<int>& level); // Construir grafo de niveles
-    int findBlockingFlow(int vertex, int flow, std::vector<int>& level, std::vector<int>& start); // Encontrar flujo bloqueante
+    struct Result {
+        std::vector<std::pair<int, int>> source_flows; // vector de pares de enteros de fuentes y flujos
+        std::vector<std::pair<int, int>> sink_flows; // vector de pares de enteros de sumideros y flujos
+        int total_flow; // flujo total
+        double time_ms; // tiempo en milisegundos
+    };
+    
+    static Result solve(Graph& graph); // método para obtener el resultado
 
-    int solve(); // Resolver el problema de flujo máximo
-    double getExecutionTime() const; // Obtener el tiempo de ejecución
+private:
+    static int maxFlow(Graph& graph, int source, int sink); // método para calcular el flujo máximo
 };
 
 #endif // ALGORITHM_H

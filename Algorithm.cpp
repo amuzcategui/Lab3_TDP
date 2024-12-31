@@ -1,123 +1,62 @@
 #include "Algorithm.h"
-#include <tuple> // Para std::priority_queue con tuplas
-/**
- * Constructor de la clase Algorithm.
- * 
- * @param g Grafo sobre el que se ejecutará el algoritmo.
- * 
- */
-Algorithm::Algorithm(Graph& g) : graph(g), flowManager() {}
 
 /**
- * Construye el grafo de niveles usando BFS.
+ * @brief Método para calcular el flujo máximo con el algoritmo de Dinic
  * 
- * @param level Vector que almacenará los niveles de cada vértice.
+ * @param graph Grafo de entrada
  * 
- * @return true si existe un camino al sumidero, false en caso contrario.
+ * @return Result Estructura con los resultados del algoritmo
  */
-
-
-bool Algorithm::buildLevelGraph(std::vector<int>& level) {
-    int numVertices = graph.getNumVertices();
-    level.assign(numVertices, -1);
-    
-    using NodeCapacity = std::pair<int, int>; // (capacidad, nodo)
-    std::priority_queue<NodeCapacity> pq;
-
-    int source = graph.getSuperSource();
-    int sink = graph.getSuperSink();
-    
-    level[source] = 0;
-    pq.emplace(std::numeric_limits<int>::max(), source); // Mayor capacidad primero
-
-    while (!pq.empty()) {
-        auto [capacity, current] = pq.top();
-        pq.pop();
-
-        for (int next : graph.getNeighbors(current)) {
-            int residualCapacity = graph.getResidualCapacity(current, next);
-            if (level[next] < 0 && residualCapacity > 0) {
-                level[next] = level[current] + 1;
-                pq.emplace(residualCapacity, next);
-            }
-        }
-    }
-    
-    return level[sink] >= 0;
-}
-
-/**
- * Encuentra un flujo bloqueante usando DFS.
- * 
- * @param vertex Vértice actual.
- * @param flow Flujo actual.
- * @param level Vector de niveles.
- * @param start Vector de índices de inicio para cada vértice.
- * 
- * @return Flujo bloqueante encontrado.
- */
-int Algorithm::findBlockingFlow(int vertex, int flow, std::vector<int>& level, std::vector<int>& start) {
-    if (vertex == graph.getSuperSink()) {
-        return flow;
-    }
-
-    const auto& neighbors = graph.getNeighbors(vertex); // Guardar vecinos una vez
-    for (; start[vertex] < static_cast<int>(neighbors.size()); start[vertex]++) {
-        int next = neighbors[start[vertex]];
-
-        if (level[next] == level[vertex] + 1 && graph.getResidualCapacity(vertex, next) > 0) {
-            int currFlow = std::min(flow, graph.getResidualCapacity(vertex, next));
-            int tempFlow = findBlockingFlow(next, currFlow, level, start);
-
-            if (tempFlow > 0) {
-                graph.updateFlow(vertex, next, tempFlow);
-                return tempFlow;
-            }
-        }
-    }
-
-    return 0;
-}
-
-
-/**
- * Implementa el algoritmo de Dinic para encontrar el flujo máximo.
- * 
- * @return Flujo máximo encontrado.
- */
-int Algorithm::solve() {
+Algorithm::Result Algorithm::solve(Graph& graph) {
+    Result result;
     auto start = std::chrono::high_resolution_clock::now();
     
-    int totalFlow = 0;
-    std::vector<int> level;
+    int superSource, superSink;
+    graph.addSuperSourceAndSink(superSource, superSink);
     
-    graph.resetFlows();
+    result.total_flow = maxFlow(graph, superSource, superSink);
     
-    // Mientras exista un camino válido en el grafo de niveles
-    while (buildLevelGraph(level)) {
-        std::vector<int> start(graph.getNumVertices(), 0);
-        
-        // Encuentra flujos bloqueantes hasta saturar el grafo de niveles
-        int flow;
-        while ((flow = findBlockingFlow(graph.getSuperSource(), 
-                                      std::numeric_limits<int>::max(), 
-                                      level, 
-                                      start)) != 0) {
-            totalFlow += flow;
+    for (int source : graph.getSources()) {
+        int flow = 0;
+        for (int v : graph.getAdj(source)) {
+            flow += std::max(0, graph.getCurrentFlow(source, v));
         }
+        result.source_flows.push_back({source, flow});
+    }
+    
+    for (int sink : graph.getSinks()) {
+        int flow = 0;
+        for (int u : graph.getAdj(sink)) {
+            flow += std::max(0, graph.getCurrentFlow(u, sink));
+        }
+        result.sink_flows.push_back({sink, flow});
     }
     
     auto end = std::chrono::high_resolution_clock::now();
-    executionTime = end - start;
+    result.time_ms = std::chrono::duration<double, std::milli>(end - start).count();
     
-    return totalFlow;
+    return result;
 }
 
+
 /**
- * Devuelve el tiempo de ejecución del algoritmo en milisegundos.
+ * @brief Método para calcular el flujo máximo con el algoritmo de Edmonds-Karp
  * 
- * @return Tiempo de ejecución del algoritmo.
+ * @param graph Grafo de entrada
+ * 
+ * @return Result Estructura con los resultados del algoritmo
  */
-double Algorithm::getExecutionTime() const {
-    return executionTime.count() * 1000.0;
+int Algorithm::maxFlow(Graph& graph, int source, int sink) {
+    State state(graph.size());
+    int total_flow = 0;
+    
+    while (state.bfs(graph, source, sink)) {
+        std::fill(state.getNextArray().begin(), state.getNextArray().end(), 0);
+        
+        while (int flow = state.dfs(graph, source, sink, INT_MAX)) {
+            total_flow += flow;
+        }
+    }
+    
+    return total_flow;
 }

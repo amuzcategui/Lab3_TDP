@@ -7,138 +7,75 @@
 int main() {
     std::cout << "Iniciando pruebas de la clase Graph...\n\n";
 
-    // Crear archivo temporal de prueba
-    std::string testFile = "test_graph.txt";
+    // Test 1: Constructor y addEdge
+    std::cout << "Probando constructor y addEdge... ";
     {
-        std::ofstream file(testFile);
-        file << "0 6\n";        // sources
-        file << "5 7\n";        // sinks
-        file << "0 1 10\n";     // edges
-        file << "0 2 10\n";
-        file << "1 3 15\n";
-        file << "2 4 25\n";
-        file << "3 2 6\n";
-        file << "3 5 10\n";
-        file << "3 7 5\n";
-        file << "4 5 10\n";
-        file << "6 1 5\n";
-    }
-
-    // Prueba del constructor
-    std::cout << "Probando constructor... ";
-    {
-        Graph graph;
-        assert(graph.getNumVertices() == 0);
+        Graph g(3);
+        g.addEdge(0, 1, 10);
+        assert(g.getCapacity(0, 1) == 10);
+        assert(g.getCurrentFlow(0, 1) == 0);
+        
+        // Verificar que la arista residual se creó
+        assert(g.getCapacity(1, 0) == 0);
+        
+        // Verificar lista de adyacencia
+        const auto& adj = g.getAdj(0);
+        assert(!adj.empty() && adj[0] == 1);
     }
     std::cout << "OK\n";
 
-    // Prueba de addEdge
-    std::cout << "Probando addEdge... ";
+    // Test 2: Load from file
+    std::cout << "Probando loadFromFile... ";
     {
-        Graph graph;
+        // Crear archivo temporal de prueba
+        std::ofstream file("test_graph.txt");
+        file << "0 1\n";      // sources
+        file << "3 4\n";      // sinks
+        file << "0 2 10\n";   // edges
+        file << "2 3 5\n";
+        file << "2 4 8\n";
+        file.close();
 
-        // Añadir una arista y verificar
-        graph.addEdge(0, 1, 10);
-        assert(graph.getResidualCapacity(0, 1) == 10);
-        assert(graph.getCurrentFlow(0, 1) == 0);
-
-        // Verificar que el número de vértices se actualiza
-        assert(graph.getNumVertices() >= 2);
-
-        // Añadir más aristas
-        graph.addEdge(1, 2, 15);
-        graph.addEdge(0, 2, 20);
-
-        // Verificar vecinos
-        std::vector<int> neighbors = graph.getNeighbors(0);
-        assert(neighbors.size() == 2); // Debe tener dos vecinos
+        Graph g;
+        bool loaded = g.loadFromFile("test_graph.txt");
+        assert(loaded);
+        
+        // Verificar estructura
+        assert(g.getCapacity(0, 2) == 10);
+        assert(g.getCapacity(2, 3) == 5);
+        assert(g.getCapacity(2, 4) == 8);
+        
+        std::remove("test_graph.txt");
     }
     std::cout << "OK\n";
 
-    // Prueba de operaciones de flujo
-    std::cout << "Probando operaciones de flujo... ";
+    // Test 3: Getters
+    std::cout << "Probando getters... ";
     {
-        Graph graph;
+        // Crear archivo temporal para probar getters
+        std::ofstream file("test_getters.txt");
+        file << "0 1\n";      // sources
+        file << "3 4\n";      // sinks
+        file << "0 2 10\n";   // edges
+        file << "1 2 8\n";
+        file.close();
 
-        // Configurar un pequeño grafo
-        graph.addEdge(0, 1, 10);
-        graph.addEdge(1, 2, 8);
-
-        // Actualizar flujo
-        graph.updateFlow(0, 1, 5);
-        assert(graph.getCurrentFlow(0, 1) == 5);
-        assert(graph.getResidualCapacity(0, 1) == 5);
-
-        // Resetear flujos
-        graph.resetFlows();
-        assert(graph.getCurrentFlow(0, 1) == 0);
-        assert(graph.getResidualCapacity(0, 1) == 10);
+        Graph g;
+        g.loadFromFile("test_getters.txt");
+        
+        // Verificar getSources y getSinks
+        const auto& sources = g.getSources();
+        const auto& sinks = g.getSinks();
+        
+        assert(sources.size() == 2);
+        assert(sources[0] == 0 && sources[1] == 1);
+        assert(sinks.size() == 2);
+        assert(sinks[0] == 3 && sinks[1] == 4);
+        
+        std::remove("test_getters.txt");
     }
     std::cout << "OK\n";
 
-    // Prueba de super source y sink
-    std::cout << "Probando super source y sink... ";
-    {
-        Graph graph;
-
-        // Configurar grafo base
-        graph.addEdge(0, 1, 10);
-        graph.addEdge(1, 2, 8);
-        graph.addEdge(2, 3, 12);
-
-        std::vector<int> sources = {0};
-        std::vector<int> sinks = {3};
-
-        // Añadir super source y sink
-        graph.addSuperSourceAndSink(sources, sinks);
-
-        // Verificar que se crearon los nuevos nodos
-        int superSource = graph.getSuperSource();
-        int superSink = graph.getSuperSink();
-
-        assert(superSource >= 0);
-        assert(superSink > superSource);
-
-        // Verificar que hay conexiones desde super source y hacia super sink
-        assert(graph.getResidualCapacity(superSource, 0) > 0);
-        assert(graph.getResidualCapacity(3, superSink) > 0);
-    }
-    std::cout << "OK\n";
-
-    // Prueba de carga desde archivo
-    std::cout << "Probando carga desde archivo... ";
-    {
-        Graph graph;
-        std::vector<int> sources, sinks;
-
-        try {
-            // Cargar grafo desde archivo
-            graph.loadFromFile(testFile, sources, sinks);
-
-            // Verificar fuentes y sumideros
-            assert(sources.size() == 2);
-            assert(sinks.size() == 2);
-            assert(sources[0] == 0);
-            assert(sources[1] == 6);
-            assert(sinks[0] == 5);
-            assert(sinks[1] == 7);
-
-            // Verificar algunas aristas
-            assert(graph.getResidualCapacity(0, 1) == 10);
-            assert(graph.getResidualCapacity(0, 2) == 10);
-            assert(graph.getResidualCapacity(1, 3) == 15);
-
-            // Limpiar archivo temporal
-            std::remove(testFile.c_str());
-
-        } catch (const std::exception& e) {
-            std::remove(testFile.c_str());
-            std::cerr << "Error en la prueba de carga de archivo: " << e.what() << std::endl;
-            assert(false);
-        }
-    }
-    std::cout << "OK\n";
-
-    std::cout << "\nTodas las pruebas pasaron exitosamente!\n";
+    std::cout << "\nTodas las pruebas de Graph pasaron exitosamente!\n";
     return 0;
 }
